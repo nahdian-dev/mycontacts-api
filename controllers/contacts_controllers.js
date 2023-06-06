@@ -1,5 +1,6 @@
 const asyncHandler = require('express-async-handler')
 const Contact = require('../models/contacts_model')
+const Joi = require('joi')
 
 // @desc GET all contact
 // @route GET - /contacts
@@ -11,7 +12,7 @@ const getContacts = asyncHandler(async (req, res) => {
 
 // @desc GET specific contact
 // @route GET - /contacts/:id
-// @access public
+// @access private
 const getSpecificContact = async (req, res) => {
     const findContact = await Contact.findById(req.params.id)
 
@@ -27,23 +28,32 @@ const getSpecificContact = async (req, res) => {
 // @route POST - /contacts
 // @access public
 const postContact = asyncHandler(async (req, res) => {
-    const requestBody = req.body
-    const { name, address, gender } = requestBody
 
-    if (!name || !address || !gender) {
+    const schema = Joi.object({
+        name: Joi.string().required(),
+        email: Joi.string().email().required(),
+        phone: Joi.number().required(),
+    })
+
+    const { error, value } = schema.validate(req.body)
+
+    if (error) {
         res.status(400)
-        throw new Error("Semua field harus di isi!")
+        throw Error(error.details[0].message)
     }
 
-    const postContact = await Contact.create(
-        {
-            name,
-            address,
-            gender,
-        }
-    )
+    const createContact = await Contact.create(value)
 
-    res.status(201).json(postContact)
+    if (!createContact) {
+        res.status(500)
+        throw new Error(err)
+    }
+
+    res.status(201).json({
+        message: "Berhasil tambah data!",
+        body: req.body
+    })
+
 })
 
 // @desc PUT contact

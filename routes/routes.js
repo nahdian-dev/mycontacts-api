@@ -7,15 +7,15 @@ const { register, login, current, all_users } = require('../controllers/users_co
 
 // contact routes
 router.get('/contacts', getContacts)
-router.get('/contacts/:id', getSpecificContact)
+router.get('/contacts/:id', validateToken, getSpecificContact)
 router.post('/contacts', postContact)
-router.put('/contacts/:id', putContact)
-router.delete('/contacts/:id', deleteContact)
+router.put('/contacts/:id', validateToken, putContact)
+router.delete('/contacts/:id', validateToken, deleteContact)
 
 // users routes
+router.get('/users', all_users)
 router.post('/users/register', register)
 router.post('/users/login', login)
 router.get('/users/current', validateToken, current)
-router.get('/users/all-users', all_users)
 
 module.exports = router

@@ -3,6 +3,9 @@ const bcrypt = require('bcrypt')
 const Users = require('../models/users_model')
 const jwt = require('jsonwebtoken')
 
+// @desc GET all users
+// @route GET - /users
+// @access public
 const all_users = asyncHandler(async (req, res) => {
     const all_users = await Users.find()
 
