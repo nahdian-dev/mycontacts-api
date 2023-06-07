@@ -2,6 +2,7 @@ const asyncHandler = require('express-async-handler')
 const bcrypt = require('bcrypt')
 const Users = require('../models/users_model')
 const jwt = require('jsonwebtoken')
+const Joi = require('joi')
 
 // @desc GET all users
 // @route GET - /users
@@ -16,35 +17,44 @@ const all_users = asyncHandler(async (req, res) => {
 // @route POST - /users/register
 // @access public
 const register = asyncHandler(async (req, res) => {
+    const { username, email, password } = req.body
+
+    const schema = Joi.object({
+        username: Joi.string().min(4).max(16).required(),
+        email: Joi.string().email().required(),
+        password: Joi.string().min(4).max(16).required(),
+    })
+
+    const { error, value } = await schema.validate(req.body)
+
+    if (error) {
+        res.status(400)
+        throw new Error(error)
+    }
+
+    const alreadyEmail = await Users.findOne({ email })
+
+    if (alreadyEmail) {
+        res.status(400)
+        throw new Error('Email sudah tersedia!')
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10)
+
     try {
-        const { username, email, password } = req.body
-
-        if (!username || !email || !password) {
-            res.status(400)
-            throw new Error('Body harus lengkap!')
-        }
-
-        const alreadyEmail = await Users.findOne({ email })
-
-        if (alreadyEmail) {
-            res.status(400)
-            throw new Error('Email tersedia!')
-        }
-
-        const hashedPassword = await bcrypt.hash(password, 10)
-
         const createUser = await Users.create({
             username,
             email,
             password: hashedPassword
         })
-
-        res.json(createUser)
+        res.status(200).json({
+            message: "Berhasil membuat akun!",
+            body: createUser
+        })
     } catch (error) {
-        console.log(error)
+        res.status(400)
         throw new Error(error)
     }
-
 
 })
 
@@ -71,7 +81,7 @@ const login = asyncHandler(async (req, res) => {
             }
         },
             process.env.SECRET_KEY_TOKEN,
-            { expiresIn: '1s' }
+            { expiresIn: '1h' }
         )
 
         res.status(200).json({ accessToken: accessToken })
